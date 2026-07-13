@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบปรับและคำนวณยา Warfarin อย่างง่าย</title>
+    <!-- Tailwind CSS for modern responsive UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun & Inter for professional look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for aesthetic UI indicators -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+        }
+        /* Custom scrollbar for better user experience */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ซ่อนลูกศรขึ้นลง (Spin buttons) พื้นฐานของเบราว์เซอร์ เพื่อใช้ปุ่มของเราแทน */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col antialiased">
+
+    <!-- TOP NAVIGATION / HEADER -->
+    <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-indigo-800 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 sm:py-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2.5 rounded-xl border border-white/20">
+                    <i data-lucide="activity" class="w-8 h-8 text-rose-300 animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Easy Warfarin Dose Adjuster</h1>
+                    <p class="text-xs sm:text-sm text-indigo-200 mt-0.5">ระบบคำนวณและปรับขนาดยา Warfarin รายสัปดาห์อย่างง่าย</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs bg-indigo-900/40 px-3 py-1.5 rounded-lg border border-indigo-400/20">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Clinical Assistant Tool</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER CONTAINER -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+        <!-- PART 1: THE CORE SCHEDULER (Dose Management) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 mb-5 border-b border-slate-100">
+                
+                <!-- ย้ายการเลือกขนาดยามาไว้ในส่วนจัดยา (Tabs) -->
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 bg-indigo-50 p-2 rounded-lg border border-indigo-100/50">
+                        <i data-lucide="calendar" class="text-indigo-600 w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">ระบุจำนวนเม็ดยาที่ได้รับรายวัน (Tabs)</h2>
+                        <div class="flex flex-wrap items-center gap-3 mt-3">
+                            <span class="text-sm font-semibold text-slate-600">ขนาดเม็ดยา (เลือกสี):</span>
+                            <input type="hidden" id="tablet-strength" value="3">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="selectTablet(2)" id="btn-tablet-2" title="2 mg (สีส้ม)" class="relative w-8 h-8 flex items-center justify-center rounded-full bg-orange-500 text-white font-bold text-xs shadow-sm transition-all hover:scale-110 opacity-70">2</button>
+                                <button type="button" onclick="selectTablet(3)" id="btn-tablet-3" title="3 mg (สีน้ำเงิน)" class="relative w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold text-xs shadow-md ring-2 ring-offset-2 ring-blue-600 transition-all hover:scale-110">3</button>
+                                <button type="button" onclick="selectTablet(5)" id="btn-tablet-5" title="5 mg (สีชมพู)" class="relative w-8 h-8 flex items-center justify-center rounded-full bg-pink-500 text-white font-bold text-xs shadow-sm transition-all hover:scale-110 opacity-70">5</button>
+                            </div>
+                            <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-200" id="tablet-label">3 mg / เม็ด</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Preset Pill Controls -->
+                <div class="flex flex-col items-start lg:items-end w-full lg:w-auto bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i> กรอกเม็ดด่วน:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="applyPreset(1)" class="text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm transition-all active:scale-95">วันละ 1 เม็ด</button>
+                        <button onclick="applyPreset(1.5)" class="text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm transition-all active:scale-95">วันละ 1.5 เม็ด</button>
+                        <button onclick="applyAlternating(1, 0.5)" class="text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm transition-all active:scale-95">1 สลับ 0.5</button>
+                        <button onclick="applyAlternating(1, 1.5)" class="text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm transition-all active:scale-95">1 สลับ 1.5</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Container -->
+            <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
+                <!-- SUN -->
+                <div class="rounded-xl border border-red-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#FF0000] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Sun</div>
+                    <div class="p-2 bg-red-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-red-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('sun', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-red-100 hover:text-red-600 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-sun" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-red-600">
+                            <button type="button" onclick="stepDose('sun', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-red-100 hover:text-red-600 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-sun">- mg</div>
+                    </div>
+                </div>
+                <!-- MON -->
+                <div class="rounded-xl border border-yellow-200 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#FFFF00] text-gray-800 text-center py-2 text-xs font-bold uppercase tracking-wider">Mon</div>
+                    <div class="p-2 bg-yellow-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-yellow-200 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('mon', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-yellow-100 hover:text-yellow-700 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-mon" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-yellow-600">
+                            <button type="button" onclick="stepDose('mon', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-yellow-100 hover:text-yellow-700 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-mon">- mg</div>
+                    </div>
+                </div>
+                <!-- TUE -->
+                <div class="rounded-xl border border-pink-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#FF00FF] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Tue</div>
+                    <div class="p-2 bg-pink-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-pink-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('tue', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-pink-100 hover:text-pink-600 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-tue" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-pink-600">
+                            <button type="button" onclick="stepDose('tue', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-pink-100 hover:text-pink-600 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-tue">- mg</div>
+                    </div>
+                </div>
+                <!-- WED -->
+                <div class="rounded-xl border border-green-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#008000] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Wed</div>
+                    <div class="p-2 bg-green-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-green-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('wed', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-green-100 hover:text-green-700 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-wed" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-green-700">
+                            <button type="button" onclick="stepDose('wed', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-green-100 hover:text-green-700 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-wed">- mg</div>
+                    </div>
+                </div>
+                <!-- THU -->
+                <div class="rounded-xl border border-orange-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#FFA500] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Thu</div>
+                    <div class="p-2 bg-orange-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-orange-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('thu', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-orange-100 hover:text-orange-600 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-thu" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-orange-600">
+                            <button type="button" onclick="stepDose('thu', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-orange-100 hover:text-orange-600 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-thu">- mg</div>
+                    </div>
+                </div>
+                <!-- FRI -->
+                <div class="rounded-xl border border-blue-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#0000FF] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Fri</div>
+                    <div class="p-2 bg-blue-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-blue-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('fri', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-blue-100 hover:text-blue-600 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-fri" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-blue-600">
+                            <button type="button" onclick="stepDose('fri', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-blue-100 hover:text-blue-600 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-fri">- mg</div>
+                    </div>
+                </div>
+                <!-- SAT -->
+                <div class="rounded-xl border border-purple-100 overflow-hidden shadow-sm flex flex-col">
+                    <div class="bg-[#800080] text-white text-center py-2 text-xs font-bold uppercase tracking-wider">Sat</div>
+                    <div class="p-2 bg-purple-50/20 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between bg-white rounded-lg border border-purple-100 p-1 shadow-sm">
+                            <button type="button" onclick="stepDose('sat', -0.5)" title="ลด 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-purple-100 hover:text-purple-600 active:scale-95 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <input type="number" step="0.5" min="0" id="dose-sat" placeholder="0" oninput="calculateWeeklyDose()" class="w-10 text-center text-lg font-bold text-slate-700 bg-transparent focus:outline-none focus:text-purple-600">
+                            <button type="button" onclick="stepDose('sat', 0.5)" title="เพิ่ม 0.5 เม็ด" class="w-7 h-7 flex items-center justify-center rounded bg-slate-50 text-slate-500 hover:bg-purple-100 hover:text-purple-600 active:scale-95 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="text-center text-[11px] text-slate-500 mt-2 font-medium" id="mg-sat">- mg</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROL BUTTONS & CALCULATION RESULT TABLE -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- BUTTON ACTIONS -->
+                <div class="lg:col-span-5 flex flex-wrap gap-2 sm:gap-3">
+                    <button onclick="saveToPreviousDose()" class="flex-1 min-w-[140px] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all text-white font-semibold py-3 px-2 rounded-xl shadow-md flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                        <i data-lucide="arrow-right-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        <span>Save 1 (Weekly Dose ครั้งก่อน)</span>
+                    </button>
+                    <button onclick="saveCurrentDoseOnly()" class="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all text-white font-semibold py-3 px-2 rounded-xl shadow-md flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                        <i data-lucide="save" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        <span>Save 2 (Weekly Dose ครั้งนี้)</span>
+                    </button>
+                    <button onclick="clearForm()" class="bg-rose-500 hover:bg-rose-600 active:scale-[0.98] transition-all text-white font-semibold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2" title="ล้างข้อมูลปฏิทิน">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- CALCULATION BOXES -->
+                <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- CURRENT WEEKLY DOSE -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner">
+                        <span class="text-xs font-semibold text-slate-500 block mb-1">Weekly Dose ครั้งนี้</span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span id="weekly-dose-current" class="text-2xl font-extrabold text-blue-700">0.00</span>
+                            <span class="text-sm font-semibold text-slate-400">mg</span>
+                        </div>
+                    </div>
+
+                    <!-- PREVIOUS WEEKLY DOSE -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
+                        <span class="text-xs font-semibold text-slate-500 block mb-1">Weekly Dose ครั้งก่อน</span>
+                        <div class="flex items-center justify-between mt-1">
+                            <input type="number" id="weekly-dose-previous" value="22.5" step="0.1" min="0" oninput="calculateAdjustmentPercentage()" class="w-full bg-transparent text-2xl font-extrabold text-slate-700 border-b border-dashed border-slate-300 focus:outline-none focus:border-indigo-600 py-1 mr-2">
+                            <span class="text-sm font-semibold text-slate-400">mg</span>
+                        </div>
+                    </div>
+
+                    <!-- PERCENTAGE ADJUSTED -->
+                    <div id="pct-card" class="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-4 flex flex-col justify-between transition-colors">
+                        <span class="text-xs font-semibold text-slate-500 block mb-1">ร้อยละขนาดยาที่ปรับ</span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span id="adjustment-percentage" class="text-2xl font-extrabold">0.00 %</span>
+                            <span id="pct-icon-span" class="text-xs font-extrabold text-slate-500 uppercase flex items-center"><i data-lucide="equal" class="w-4 h-4 inline mr-0.5"></i> คงเดิม</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PART 2: INR GUIDANCE & HIS NOTE -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- COLUMN 1: Clinical Guidance Advisor & INR Inputs -->
+            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
+                <div class="flex items-center gap-2 pb-4 mb-5 border-b border-slate-100">
+                    <i data-lucide="activity" class="text-indigo-600 w-5 h-5"></i>
+                    <h3 class="text-lg font-bold text-slate-800">เป้าหมาย INR และคำแนะนำการปรับยา</h3>
+                </div>
+
+                <!-- ย้ายเป้าหมาย INR มาคอลัมน์นี้ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 shadow-sm">
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1.5">เป้าหมาย Target INR Range</label>
+                        <select id="target-inr" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-700 shadow-sm">
+                            <option value="2.0-3.0" selected>Keep 2.0 - 3.0</option>
+                            <option value="2.5-3.5">Keep 2.5 - 3.5</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1.5">ค่า INR ล่าสุดวันนี้</label>
+                        <div class="relative">
+                            <input type="number" id="current-inr" placeholder="เช่น 2.45" step="0.01" min="0" class="w-full bg-white border border-indigo-200 rounded-lg pl-3 pr-10 py-2.5 text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                            <span class="absolute right-3 top-3 text-xs text-indigo-400 font-bold mt-0.5">INR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADDED: กล่องคำสั่งแพทย์เพิ่มเติมกรณี INR สูง -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-rose-50/70 p-4 rounded-xl border border-rose-100 shadow-sm">
+                    <div class="sm:col-span-2">
+                        <span class="text-xs font-bold text-rose-800 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> คำสั่งแพทย์เพิ่มเติม (กรณีปรับลด/หยุดยา/INR สูง)</span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-rose-900 mb-1.5">หยุดยาวาร์ฟาริน (Hold)</label>
+                        <div class="relative">
+                            <input type="number" id="omit-days" placeholder="ระบุจำนวนวัน" min="0" class="w-full bg-white border border-rose-200 rounded-lg pl-3 pr-10 py-2.5 text-sm font-bold text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all shadow-sm">
+                            <span class="absolute right-3 top-3 text-xs text-rose-400 font-bold mt-0.5">วัน</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-rose-900 mb-1.5">ให้ Vitamin K</label>
+                        <div class="relative">
+                            <input type="text" id="vit-k-dose" placeholder="ระบุขนาดยา" class="w-full bg-white border border-rose-200 rounded-lg pl-3 pr-10 py-2.5 text-sm font-bold text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all shadow-sm">
+                            <span class="absolute right-3 top-3 text-xs text-rose-400 font-bold mt-0.5">mg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="guideline-loading" class="flex flex-col items-center justify-center py-6 text-slate-400 text-sm">
+                    <i data-lucide="info" class="w-8 h-8 text-indigo-300 mb-3"></i>
+                    <span class="font-medium text-slate-500">กรอกค่า "INR ล่าสุดวันนี้" เพื่อดูคำแนะนำการปรับยาตาม Guideline</span>
+                </div>
+
+                <div id="guideline-content" class="hidden space-y-4">
+                    <div id="inr-status-badge" class="p-3 rounded-xl flex items-center gap-2 text-sm font-semibold">
+                        <!-- Dynamic content -->
+                    </div>
+                    
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-xs sm:text-sm text-indigo-900 space-y-2">
+                        <p class="font-bold text-indigo-950 flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
+                            แนวทางการปรับยาตามตารางมาตรฐาน:
+                        </p>
+                        <p id="guideline-recommendation" class="leading-relaxed"></p>
+                    </div>
+
+                    <div class="border border-slate-100 rounded-xl p-3 bg-slate-50 space-y-1.5 text-xs text-slate-600">
+                        <div class="font-bold text-slate-700 mb-1">ปริมาณยาเป้าหมายตามเกณฑ์:</div>
+                        <div>• ระดับการปรับเปลี่ยน: <span id="calc-range" class="font-semibold text-indigo-700">-</span></div>
+                        <div>• ขนาดยาใหม่ต่อสัปดาห์ควรอยู่ช่วง: <span id="calc-average-dose" class="font-bold text-emerald-700">- mg</span></div>
+                    </div>
+                </div>
+
+                <!-- General Reminder Section -->
+                <div class="mt-auto pt-5 border-t border-slate-100 text-[11px] text-slate-400 space-y-2">
+                    <div class="bg-rose-50 border border-rose-100 rounded-lg p-2.5 text-rose-600">
+                        <p class="font-bold mb-1">🚨 กรณี Major Bleeding (Any INR):</p>
+                        <p>• Vitamin K 10 mg IV plus FFP</p>
+                        <p>• Repeat Vitamin K q 12 hr if needed</p>
+                    </div>
+                    <p><strong>หมายเหตุ:</strong> ข้อมูลนี้อ้างอิงจากตารางแนวทางการปรับขนาดยา Warfarin เบื้องต้น โปรดพิจารณาร่วมกับอาการทางคลินิกของผู้ป่วยเสมอ</p>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: Medical Note & Report Generator -->
+            <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
+                <div class="flex items-center gap-2 pb-4 mb-5 border-b border-slate-100">
+                    <i data-lucide="file-check" class="text-indigo-600 w-5 h-5"></i>
+                    <h3 class="text-lg font-bold text-slate-800">บันทึกประวัติ (HIS Copier)</h3>
+                </div>
+                
+                <textarea id="his-note-area" readonly class="w-full flex-grow min-h-[180px] bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none leading-relaxed shadow-inner" placeholder="ระบบจะจัดรูปแบบรายงานประวัติสำหรับคัดลอกลงระบบเวชระเบียน (EHR/HIS) ทันที..."></textarea>
+                
+                <div class="mt-4 flex gap-2">
+                    <button onclick="copyToClipboard()" class="flex-grow bg-slate-800 hover:bg-slate-900 active:scale-[0.98] transition-all text-white text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>คัดลอกลงคลิปบอร์ด</span>
+                    </button>
+                    <button onclick="shareText()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 border border-indigo-100 transition-all">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span>พิมพ์/เซฟ</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- CUSTOM TOAST NOTIFICATION BOX (Anti-Alert System) -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs sm:text-sm py-3 px-5 rounded-xl shadow-2xl flex items-center gap-2 border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i data-lucide="check-circle-2" class="text-emerald-400 w-5 h-5" id="toast-icon"></i>
+        <span id="toast-message">ข้อความแจ้งเตือน</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-6 mt-8">
+        <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-400 space-y-2">
+            <p>© 2026 Warfarin Dose Adjuster App • ออกแบบเพื่อความรวดเร็วและปลอดภัยในการดูแลรักษาผู้ป่วยในหอผู้ป่วยและคลินิกผู้ป่วยนอก</p>
+            <p class="flex justify-center items-center gap-2">
+                <span class="bg-slate-200 px-2 py-0.5 rounded text-slate-500 font-semibold">v2.1 Stable</span>
+                <span>•</span>
+                <span class="text-slate-500">Thai Guideline-Compliant Calculator</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- CLIENT SIDE LOGIC -->
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Dom Elements
+        const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const doseInputs = {};
+        days.forEach(day => {
+            doseInputs[day] = document.getElementById(`dose-${day}`);
+        });
+
+        const weeklyDoseCurrentEl = document.getElementById('weekly-dose-current');
+        const weeklyDosePreviousInput = document.getElementById('weekly-dose-previous');
+        const adjustmentPercentageEl = document.getElementById('adjustment-percentage');
+        const pctCard = document.getElementById('pct-card');
+        const pctIconSpan = document.getElementById('pct-icon-span');
+        const tabletStrengthInput = document.getElementById('tablet-strength');
+        const targetInrSelect = document.getElementById('target-inr');
+        const currentInrInput = document.getElementById('current-inr');
+        const hisNoteArea = document.getElementById('his-note-area');
+        const omitDaysInput = document.getElementById('omit-days');
+        const vitKDoseInput = document.getElementById('vit-k-dose');
+
+        // Guidelines Elements
+        const guidelineLoading = document.getElementById('guideline-loading');
+        const guidelineContent = document.getElementById('guideline-content');
+        const inrStatusBadge = document.getElementById('inr-status-badge');
+        const guidelineRec = document.getElementById('guideline-recommendation');
+        const calcRangeEl = document.getElementById('calc-range');
+        const calcAverageDoseEl = document.getElementById('calc-average-dose');
+
+        // Dynamic Event listeners on changes
+        currentInrInput.addEventListener('input', () => {
+            evaluateInrAndGuideline();
+            updateHISNote();
+        });
+        targetInrSelect.addEventListener('change', () => {
+            evaluateInrAndGuideline();
+            updateHISNote();
+        });
+        omitDaysInput.addEventListener('input', updateHISNote);
+        vitKDoseInput.addEventListener('input', updateHISNote);
+
+        // Select Tablet UI Function
+        function selectTablet(mg) {
+            tabletStrengthInput.value = mg;
+            
+            const strengths = [2, 3, 5];
+            const colors = {2: 'ring-orange-500', 3: 'ring-blue-600', 5: 'ring-pink-500'};
+            
+            strengths.forEach(s => {
+                const btn = document.getElementById(`btn-tablet-${s}`);
+                if (s === mg) {
+                    btn.classList.add('ring-2', 'ring-offset-2', colors[s], 'shadow-md');
+                    btn.classList.remove('shadow-sm', 'opacity-70');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-offset-2', colors[s], 'shadow-md');
+                    btn.classList.add('shadow-sm', 'opacity-70');
+                }
+            });
+            
+            document.getElementById('tablet-label').textContent = `${mg} mg / เม็ด`;
+            calculateWeeklyDose(); // Trigger full recalc since strength changed
+        }
+
+        // ฟังก์ชันสำหรับกดปุ่มบวก/ลบ จำนวนเม็ดยา (ทีละ 0.25)
+        function stepDose(day, stepValue) {
+            const input = doseInputs[day];
+            let currentVal = parseFloat(input.value) || 0;
+            let newVal = currentVal + stepValue;
+            
+            // ป้องกันไม่ให้ค่าติดลบ
+            if (newVal < 0) newVal = 0;
+            
+            // ใส่ค่ากลับไปที่ช่อง (ถ้าเป็น 0 ให้เคลียร์ว่างๆ ไว้จะได้ดูสะอาดตา)
+            input.value = newVal > 0 ? newVal : '';
+            
+            // สั่งคำนวณใหม่
+            calculateWeeklyDose();
+        }
+
+        // Core Calculation Functions
+        function calculateWeeklyDose() {
+            let totalMg = 0;
+            const strength = parseFloat(tabletStrengthInput.value) || 3;
+
+            days.forEach(day => {
+                const tabs = parseFloat(doseInputs[day].value) || 0;
+                const dailyMg = tabs * strength;
+                totalMg += dailyMg;
+
+                // Update the small indicator below the input to show mg
+                const mgSpan = document.getElementById(`mg-${day}`);
+                if (tabs === 0) {
+                    mgSpan.textContent = "0 mg";
+                    mgSpan.className = "text-center text-[11px] text-slate-400 mt-2";
+                } else {
+                    mgSpan.textContent = `= ${dailyMg.toFixed(1)} mg`;
+                    mgSpan.className = "text-center text-[11px] font-bold text-indigo-600 mt-2 bg-indigo-50 py-0.5 px-1 rounded-md border border-indigo-100/30";
+                }
+            });
+
+            // Update UI Total Weekly Dose (in mg)
+            weeklyDoseCurrentEl.textContent = totalMg.toFixed(2);
+            
+            // Recalculate percentage adjustment and distribution
+            calculateAdjustmentPercentage();
+            evaluateInrAndGuideline();
+            updateHISNote();
+        }
+
+        function calculateAdjustmentPercentage() {
+            const current = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
+            const previous = parseFloat(weeklyDosePreviousInput.value) || 0;
+
+            let percentage = 0;
+            if (previous > 0) {
+                percentage = ((current - previous) / previous) * 100;
+            }
+
+            // Update Text
+            adjustmentPercentageEl.textContent = `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)} %`;
+
+            // Style Card depending on Increased, Decreased, or Same
+            if (percentage > 0.01) {
+                // INCREASED: Blueish Green styling
+                pctCard.className = "bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex flex-col justify-between transition-colors";
+                pctCard.querySelector('span').className = "text-xs font-semibold text-emerald-600 block mb-1";
+                pctIconSpan.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4 inline mr-0.5"></i> เพิ่มขึ้น';
+                pctIconSpan.className = "text-xs font-extrabold text-emerald-600 uppercase flex items-center";
+            } else if (percentage < -0.01) {
+                // DECREASED: Pink/Rose alert styling as shown in image_0ee583.png
+                pctCard.className = "bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 flex flex-col justify-between transition-colors";
+                pctCard.querySelector('span').className = "text-xs font-semibold text-rose-600 block mb-1";
+                pctIconSpan.innerHTML = '<i data-lucide="trending-down" class="w-4 h-4 inline mr-0.5"></i> ลดลง';
+                pctIconSpan.className = "text-xs font-extrabold text-rose-600 uppercase flex items-center";
+            } else {
+                // CONSTANT
+                pctCard.className = "bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-4 flex flex-col justify-between transition-colors";
+                pctCard.querySelector('span').className = "text-xs font-semibold text-slate-500 block mb-1";
+                pctIconSpan.innerHTML = '<i data-lucide="equal" class="w-4 h-4 inline mr-0.5"></i> คงเดิม';
+                pctIconSpan.className = "text-xs font-extrabold text-slate-500 uppercase flex items-center";
+            }
+            lucide.createIcons();
+        }
+
+        // Apply quick preset dose structures (Now based on Tablets instead of mg)
+        function applyPreset(tabs) {
+            days.forEach(day => {
+                doseInputs[day].value = tabs;
+            });
+            calculateWeeklyDose();
+            showToast(`ตั้งค่าด่วนทุกวัน วันละ ${tabs} เม็ด สำเร็จ`);
+        }
+
+        function applyAlternating(tabs1, tabs2) {
+            // Sun, Tue, Thu, Sat get tabs1
+            // Mon, Wed, Fri get tabs2
+            doseInputs['sun'].value = tabs1;
+            doseInputs['mon'].value = tabs2;
+            doseInputs['tue'].value = tabs1;
+            doseInputs['wed'].value = tabs2;
+            doseInputs['thu'].value = tabs1;
+            doseInputs['fri'].value = tabs2;
+            doseInputs['sat'].value = tabs1;
+            calculateWeeklyDose();
+            showToast(`ตั้งสูตรสลับ ${tabs1} เม็ด / ${tabs2} เม็ด เรียบร้อย`);
+        }
+
+        // Clean UI to default
+        function clearForm() {
+            days.forEach(day => {
+                doseInputs[day].value = '';
+            });
+            currentInrInput.value = '';
+            omitDaysInput.value = '';
+            vitKDoseInput.value = '';
+            calculateWeeklyDose();
+            showToast('ล้างข้อมูลเรียบร้อยแล้ว');
+        }
+
+        // Load / Save States
+        function saveCurrentVisit() {
+            const state = {
+                target: targetInrSelect.value,
+                tablet: tabletStrengthInput.value,
+                weeklyPrevious: weeklyDosePreviousInput.value,
+                doses: {}
+            };
+            days.forEach(day => {
+                state.doses[day] = doseInputs[day].value;
+            });
+            localStorage.setItem('warfarin_last_visit', JSON.stringify(state));
+        }
+
+        // Calculate and prompt guideline advisors
+        function evaluateInrAndGuideline() {
+            const inrStr = currentInrInput.value.trim();
+            if (inrStr === '') {
+                guidelineLoading.classList.remove('hidden');
+                guidelineContent.classList.add('hidden');
+                return;
+            }
+
+            const inr = parseFloat(inrStr);
+            const targetRangeStr = targetInrSelect.value;
+            const previousDose = parseFloat(weeklyDosePreviousInput.value) || 0;
+
+            guidelineLoading.classList.add('hidden');
+            guidelineContent.classList.remove('hidden');
+
+            const isTarget2030 = (targetRangeStr === '2.0-3.0');
+
+            let statusColor = "";
+            let statusText = "";
+            let statusIcon = "";
+            let recommendation = "";
+            let pctRangeText = "";
+            let minDoseTarget = 0;
+            let maxDoseTarget = 0;
+
+            // กฎร่วมสำหรับค่า INR สูงลิ่ว
+            if (inr >= 9.0) {
+                statusColor = "bg-rose-100 border border-rose-300 text-rose-900";
+                statusIcon = "alert-triangle";
+                statusText = `INR ${inr} (≥ 9) เสี่ยงเลือดออกรุนแรง`;
+                recommendation = `(กรณี no Bleeding): \nVitamin K 5 - 10 mg orally`;
+                pctRangeText = "งดยา/พบแพทย์";
+                minDoseTarget = 0; maxDoseTarget = 0;
+            } else if (inr >= 5.0) {
+                statusColor = "bg-rose-100 border border-rose-300 text-rose-900";
+                statusIcon = "alert-octagon";
+                statusText = `INR ${inr} (5.0 - 8.9) สูงกว่าเป้าหมายมาก`;
+                recommendation = `(กรณี no Bleeding): \nOmit 1 - 2 doses + Vitamin K 1 mg orally`;
+                pctRangeText = "Omit 1-2 doses";
+                minDoseTarget = 0; maxDoseTarget = 0;
+            } else {
+                // กฎแยกตาม Target
+                if (isTarget2030) {
+                    if (inr < 1.5) {
+                        statusColor = "bg-amber-50 border border-amber-200 text-amber-800";
+                        statusIcon = "trending-up";
+                        statusText = `INR ${inr} ต่ำกว่าเป้าหมายมาก (< 1.5)`;
+                        recommendation = `เพิ่มขนาดยา 10 - 20 %`;
+                        pctRangeText = "+ 10% ถึง + 20%";
+                        minDoseTarget = previousDose * 1.10; maxDoseTarget = previousDose * 1.20;
+                    } else if (inr <= 1.9) {
+                        statusColor = "bg-yellow-50 border border-yellow-200 text-yellow-800";
+                        statusIcon = "trending-up";
+                        statusText = `INR ${inr} ต่ำกว่าเป้าหมาย (1.5 - 1.9)`;
+                        recommendation = `เพิ่มขนาดยา 5 - 10 %`;
+                        pctRangeText = "+ 5% ถึง + 10%";
+                        minDoseTarget = previousDose * 1.05; maxDoseTarget = previousDose * 1.10;
+                    } else if (inr <= 3.0) {
+                        statusColor = "bg-emerald-50 border border-emerald-200 text-emerald-800";
+                        statusIcon = "check-check";
+                        statusText = `INR ${inr} อยู่ในเกณฑ์ (2.0 - 3.0)`;
+                        recommendation = `ใช้ยาขนาดเดิม`;
+                        pctRangeText = "คงเดิม (0%)";
+                        minDoseTarget = previousDose; maxDoseTarget = previousDose;
+                    } else if (inr <= 3.9) {
+                        statusColor = "bg-orange-50 border border-orange-200 text-orange-800";
+                        statusIcon = "trending-down";
+                        statusText = `INR ${inr} สูงกว่าเป้าหมาย (3.1 - 3.9)`;
+                        recommendation = `ลดขนาดยา 5 - 10 %`;
+                        pctRangeText = "- 5% ถึง - 10%";
+                        minDoseTarget = previousDose * 0.90; maxDoseTarget = previousDose * 0.95;
+                    } else if (inr <= 4.9) {
+                        statusColor = "bg-rose-50 border border-rose-200 text-rose-800";
+                        statusIcon = "trending-down";
+                        statusText = `INR ${inr} สูงกว่าเป้าหมายมาก (4.0 - 4.9)`;
+                        recommendation = `Hold 1 day + ลดขนาดยา 10 %`;
+                        pctRangeText = "Hold 1 day แล้วลด - 10%";
+                        minDoseTarget = previousDose * 0.90; maxDoseTarget = previousDose * 0.90;
+                    }
+                } else {
+                    // Target 2.5 - 3.5
+                    if (inr < 1.9) {
+                        statusColor = "bg-amber-50 border border-amber-200 text-amber-800";
+                        statusIcon = "trending-up";
+                        statusText = `INR ${inr} ต่ำกว่าเป้าหมายมาก (< 1.9)`;
+                        recommendation = `เพิ่มขนาดยา 10 - 20 %`;
+                        pctRangeText = "+ 10% ถึง + 20%";
+                        minDoseTarget = previousDose * 1.10; maxDoseTarget = previousDose * 1.20;
+                    } else if (inr <= 2.4) {
+                        statusColor = "bg-yellow-50 border border-yellow-200 text-yellow-800";
+                        statusIcon = "trending-up";
+                        statusText = `INR ${inr} ต่ำกว่าเป้าหมาย (1.9 - 2.4)`;
+                        recommendation = `เพิ่มขนาดยา 5 - 10 %`;
+                        pctRangeText = "+ 5% ถึง + 10%";
+                        minDoseTarget = previousDose * 1.05; maxDoseTarget = previousDose * 1.10;
+                    } else if (inr <= 3.5) {
+                        statusColor = "bg-emerald-50 border border-emerald-200 text-emerald-800";
+                        statusIcon = "check-check";
+                        statusText = `INR ${inr} อยู่ในเกณฑ์ (2.5 - 3.5)`;
+                        recommendation = `ใช้ยาขนาดเดิม`;
+                        pctRangeText = "คงเดิม (0%)";
+                        minDoseTarget = previousDose; maxDoseTarget = previousDose;
+                    } else if (inr <= 4.5) {
+                        statusColor = "bg-orange-50 border border-orange-200 text-orange-800";
+                        statusIcon = "trending-down";
+                        statusText = `INR ${inr} สูงกว่าเป้าหมาย (3.6 - 4.5)`;
+                        recommendation = `ลดขนาดยา 5 - 10 %`;
+                        pctRangeText = "- 5% ถึง - 10%";
+                        minDoseTarget = previousDose * 0.90; maxDoseTarget = previousDose * 0.95;
+                    } else if (inr <= 4.9) {
+                        statusColor = "bg-rose-50 border border-rose-200 text-rose-800";
+                        statusIcon = "trending-down";
+                        statusText = `INR ${inr} สูงกว่าเป้าหมายมาก (4.6 - 4.9)`;
+                        recommendation = `Hold 1 day + ลดขนาดยา 10 %`;
+                        pctRangeText = "Hold 1 day แล้วลด - 10%";
+                        minDoseTarget = previousDose * 0.90; maxDoseTarget = previousDose * 0.90;
+                    }
+                }
+            }
+
+            // Update guidelines visual elements
+            inrStatusBadge.className = `p-3 rounded-xl flex items-center gap-2 text-sm font-semibold ${statusColor}`;
+            inrStatusBadge.innerHTML = `<i data-lucide="${statusIcon}" class="w-5 h-5"></i> <span>${statusText}</span>`;
+            
+            // ใช้ innerHTML เพื่อให้รองรับ \n เป็น <br> ในส่วนของข้อความยาวๆ
+            guidelineRec.innerHTML = recommendation.replace(/\n/g, '<br>');
+            
+            if (previousDose > 0) {
+                calcRangeEl.textContent = `${pctRangeText}`;
+                if (inr >= 5.0) {
+                     calcAverageDoseEl.textContent = `พิจารณางด/ปรับยาตามดุลยพินิจแพทย์`;
+                } else if (minDoseTarget === maxDoseTarget) {
+                    calcAverageDoseEl.textContent = `${minDoseTarget.toFixed(2)} mg`;
+                } else {
+                    calcAverageDoseEl.textContent = `${minDoseTarget.toFixed(1)} - ${maxDoseTarget.toFixed(1)} mg`;
+                }
+            } else {
+                calcRangeEl.textContent = "ไม่ได้ระบุขนาดยาครั้งก่อน (ไม่สามารถประเมิน mg ได้)";
+                calcAverageDoseEl.textContent = "- mg";
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Generate full visual medical record note for clinic HIS systems
+        function updateHISNote() {
+            const target = targetInrSelect.value;
+            const currentINR = currentInrInput.value.trim() || '_______';
+            const tabletMg = parseFloat(tabletStrengthInput.value) || 3;
+            
+            const prevWeekly = parseFloat(weeklyDosePreviousInput.value) || 0;
+            const currentWeekly = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
+            const pct = parseFloat(adjustmentPercentageEl.textContent) || 0;
+            
+            // ดึงข้อความ Guideline ล่าสุด
+            let guidelineText = guidelineRec.textContent.trim() || '_______________________';
+
+            // ดึงค่าการหยุดยาและ Vit K
+            const omitDays = omitDaysInput.value.trim();
+            const vitKDose = vitKDoseInput.value.trim();
+
+            // สร้าง Format ข้อความตามแบบฟอร์ม
+            let report = `Rx note:\n`;
+            report += `ค่า INR ล่าสุดวันนี้: ${currentINR}   เป้าหมาย Target INR Range: ${target}\n`;
+            report += `แนวทางการปรับยาตามตารางมาตรฐาน: ${guidelineText}\n`;
+            
+            // แทรกคำสั่งเพิ่มเติมถ้ามีการกรอก
+            if (omitDays || vitKDose) {
+                let extraOrders = [];
+                if (omitDays) extraOrders.push(`Hold ยา ${omitDays} วัน`);
+                if (vitKDose) extraOrders.push(`ให้ Vitamin K ${vitKDose} mg`);
+                report += `คำสั่งแพทย์เพิ่มเติม: ${extraOrders.join(' และ ')}\n`;
+            }
+
+            report += `ขนาดยาล่าสุด (Weekly Dose ครั้งก่อน): ${prevWeekly.toFixed(2)} mg/week\n`;
+            
+            const pctText = pct === 0 ? 'คงเดิม 0%' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+            report += `ขนาดยา warfarin แนะนำ (Weekly Dose ครั้งนี้): ${currentWeekly.toFixed(2)} mg/week (${pctText})\n\n`;
+            
+            report += `การกินยา\n`;
+            report += `warfarin ${tabletMg} mg\n`;
+
+            // ระบบ AI วิเคราะห์รูปแบบการกินยาให้อัตโนมัติจากปฏิทิน (แยก Pattern ตามเงื่อนไข)
+            const dSun = parseFloat(doseInputs['sun'].value) || 0;
+            const dMon = parseFloat(doseInputs['mon'].value) || 0;
+            const dTue = parseFloat(doseInputs['tue'].value) || 0;
+            const dWed = parseFloat(doseInputs['wed'].value) || 0;
+            const dThu = parseFloat(doseInputs['thu'].value) || 0;
+            const dFri = parseFloat(doseInputs['fri'].value) || 0;
+            const dSat = parseFloat(doseInputs['sat'].value) || 0;
+
+            let dosingText = "";
+            
+            // Pattern 1: กินเท่ากันทุกวัน
+            if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dFri === dSat && dSat === dSun) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด ทุกวัน`;
+            } 
+            // Pattern 5: กินจันทร์-ศุกร์ (งดยา เสาร์-อาทิตย์)
+            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dSat === 0 && dSun === 0) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง ศุกร์ (งดยาวันเสาร์ - อาทิตย์)`;
+            } 
+            // Pattern 2: กินจันทร์-ศุกร์แบบหนึ่ง และ เสาร์-อาทิตย์แบบหนึ่ง
+            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dSat === dSun) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง ศุกร์ และ กินครั้งละ ${dSat} เม็ด วันเสาร์ - อาทิตย์`;
+            } 
+            // Pattern 3: กินจันทร์-พฤหัสแบบหนึ่ง และ ศุกร์-อาทิตย์แบบหนึ่ง
+            else if (dMon === dTue && dTue === dWed && dWed === dThu && dFri === dSat && dSat === dSun) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง พฤหัสบดี และ กินครั้งละ ${dFri} เม็ด วันศุกร์ - อาทิตย์`;
+            } 
+            // Pattern 4: กินจันทร์,พุธ,ศุกร์แบบหนึ่ง และ วันที่เหลือแบบหนึ่ง
+            else if (dMon === dWed && dWed === dFri && dTue === dThu && dThu === dSat && dSat === dSun) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์, พุธ, ศุกร์ และ กินครั้งละ ${dTue} เม็ด วันที่เหลือ`;
+            } 
+            // Pattern 6: กินจันทร์ ถึง เสาร์ แบบหนึ่ง และ วันอาทิตย์ อีกแบบหนึ่ง
+            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dFri === dSat && dSat !== dSun) {
+                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง เสาร์ และ ${dSun} เม็ด วันอาทิตย์`;
+            }
+            // Fallback Pattern: แต่ละวันไม่เหมือนกันเลย (Freeform)
+            else {
+                dosingText = `กิน จ:${dMon} อ:${dTue} พ:${dWed} พฤ:${dThu} ศ:${dFri} ส:${dSat} อา:${dSun} (เม็ด)`;
+            }
+
+            report += `${dosingText}\n`;
+
+            report += `\nเรียนแพทย์พิจารณา`;
+
+            hisNoteArea.value = report;
+        }
+
+        // Save 2: บันทึก Weekly Dose ครั้งนี้
+        function saveCurrentDoseOnly() {
+            saveCurrentVisit();
+            showToast('บันทึกข้อมูล "Weekly Dose ครั้งนี้" เรียบร้อยแล้ว');
+        }
+
+        // Save 1: Save current to previous dose
+        function saveToPreviousDose() {
+            const currentDose = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
+            if (currentDose === 0) {
+                showToast('กรุณาระบุจำนวนยาก่อนบันทึก', false);
+                return;
+            }
+            // ย้ายค่า Weekly Dose ปัจจุบัน ไปใส่ในช่อง Weekly Dose ครั้งก่อน
+            weeklyDosePreviousInput.value = currentDose;
+            
+            // สั่งคำนวณใหม่ ซึ่งจะทำให้ % ที่ปรับกลายเป็น 0% ทันที
+            calculateWeeklyDose();
+            
+            // บันทึกลง Local Storage เผื่อเปิดใหม่
+            saveCurrentVisit();
+            
+            showToast('บันทึกเป็นขนาดยาครั้งก่อน (Previous Dose) เรียบร้อยแล้ว');
+        }
+
+        // Utility: Copy to Clipboard
+        function copyToClipboard() {
+            const textToCopy = hisNoteArea.value;
+            if (!textToCopy) {
+                showToast('ไม่มีข้อมูลสำหรับคัดลอก', false);
+                return;
+            }
+
+            // Fallback copy utility for iframe-based systems
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textToCopy;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast('คัดลอกรายงานลงคลิปบอร์ดแล้ว!');
+        }
+
+        // Utility: Print or share report
+        function shareText() {
+            const textToPrint = hisNoteArea.value;
+            if (!textToPrint) {
+                showToast('กรุณากรอกข้อมูลเพื่อพิมพ์รายงาน', false);
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Warfarin Dose Report</title>
+                    <style>
+                        body { font-family: monospace; padding: 40px; white-space: pre-wrap; line-height: 1.5; color: #333; }
+                        button { margin-top: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+                        @media print { button { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    ${textToPrint.replace(/\n/g, '<br>')}
+                    <br>
+                    <button onclick="window.print()">พิมพ์เอกสารนี้ (Print / Save PDF)</button>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // Utility: Toast alert notification popup
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast-box');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            
+            if (isSuccess) {
+                toastIcon.className = "text-emerald-400 w-5 h-5";
+                toastIcon.setAttribute('data-lucide', 'check-circle-2');
+            } else {
+                toastIcon.className = "text-rose-400 w-5 h-5";
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+            }
+            lucide.createIcons();
+
+            // Slide in
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // Slide out after 3.5s
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3500);
+        }
+
+        // Window startup initialize
+        window.onload = function() {
+            // Initiate standard daily calculation values
+            calculateWeeklyDose();
+        }
+    </script>
+</body>
+</html>
