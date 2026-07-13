@@ -728,7 +728,7 @@
             const vitKDose = vitKDoseInput.value.trim();
 
             // สร้าง Format ข้อความตามแบบฟอร์ม
-            let report = `Rx note:\n`;
+            let report = `Rx note: ปรับยา warfarin ตาม INR\n`;
             report += `ค่า INR ล่าสุดวันนี้: ${currentINR}   เป้าหมาย Target INR Range: ${target}\n`;
             report += `แนวทางการปรับยาตามตารางมาตรฐาน: ${guidelineText}\n`;
             
@@ -740,10 +740,14 @@
                 report += `คำสั่งแพทย์เพิ่มเติม: ${extraOrders.join(' และ ')}\n`;
             }
 
-            report += `ขนาดยาล่าสุด (Weekly Dose ครั้งก่อน): ${prevWeekly.toFixed(2)} mg/week\n`;
+            // จัดรูปแบบตัวเลข mg ทศนิยมสูงสุด 1 ตำแหน่ง (ถ้าเป็น .0 ให้ซ่อน)
+            const fmtPrev = parseFloat(prevWeekly.toFixed(1));
+            const fmtCurr = parseFloat(currentWeekly.toFixed(1));
+
+            report += `ขนาดยาล่าสุด : ${fmtPrev} mg/week\n`;
             
             const pctText = pct === 0 ? 'คงเดิม 0%' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
-            report += `ขนาดยา warfarin แนะนำ (Weekly Dose ครั้งนี้): ${currentWeekly.toFixed(2)} mg/week (${pctText})\n\n`;
+            report += `ขนาดยา warfarin แนะนำ : ${fmtCurr} mg/week (${pctText})\n\n`;
             
             report += `การกินยา\n`;
             report += `warfarin ${tabletMg} mg\n`;
@@ -788,7 +792,7 @@
                 dosingText = `กิน จ:${dMon} อ:${dTue} พ:${dWed} พฤ:${dThu} ศ:${dFri} ส:${dSat} อา:${dSun} (เม็ด)`;
             }
 
-            report += `${dosingText}\n`;
+            report += `${dosingText} (${fmtCurr} mg/week)\n`;
 
             report += `\nเรียนแพทย์พิจารณา`;
 
