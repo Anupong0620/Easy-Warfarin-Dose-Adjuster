@@ -53,7 +53,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Easy Warfarin Dose Adjuster</h1>
-                    <p class="text-xs sm:text-sm text-indigo-200 mt-0.5">ระบบคำนวณและปรับขนาดยา Warfarin รายสัปดาห์อย่างง่าย</p>
+                    <p class="text-xs sm:text-sm text-indigo-200 mt-0.5">ระบบคำนวณและปรับขนาดยา Warfarin รายสัปดาห์อย่างง่าย พร้อมคำนวณวันนัด</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 text-xs bg-indigo-900/40 px-3 py-1.5 rounded-lg border border-indigo-400/20">
@@ -70,7 +70,6 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 mb-5 border-b border-slate-100">
                 
-                <!-- ย้ายการเลือกขนาดยามาไว้ในส่วนจัดยา (Tabs) -->
                 <div class="flex items-start gap-3">
                     <div class="mt-0.5 bg-indigo-50 p-2 rounded-lg border border-indigo-100/50">
                         <i data-lucide="calendar" class="text-indigo-600 w-6 h-6"></i>
@@ -190,6 +189,32 @@
                 </div>
             </div>
 
+            <!-- NEW: Dispense & HosXP (Moved from Part 3 and simplified) -->
+            <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center">
+                <div class="flex-grow w-full md:w-1/3">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <i data-lucide="pill" class="w-4 h-4 text-indigo-600"></i> จำนวนเม็ดยาถึงนัด
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="manual-total-tabs" placeholder="ระบุจำนวน" min="0" oninput="updateHISNote()" class="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-10 py-2 text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                        <span class="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">เม็ด</span>
+                    </div>
+                </div>
+                <div class="w-full md:w-2/3">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <i data-lucide="keyboard" class="w-4 h-4 text-indigo-600"></i> รูปแบบการใช้ยาในระบบ HosXP (Auto-detect)
+                    </label>
+                    <select id="hosxp-pattern" onchange="updateHISNote()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-700 shadow-sm">
+                        <option value="custom" class="italic text-slate-400">--- ไม่ระบุ หรือ รูปแบบกำหนดเอง ---</option>
+                        <option value="war1">*war1*** กิน _ เม็ด ก่อนนอน</option>
+                        <option value="war2">*war2*** กิน _ เม็ด ก่อนนอน จันทร์ ถึง ศุกร์ และ กิน _ เม็ด เสาร์ และ อาทิตย์</option>
+                        <option value="war3">*war3*** กิน _ เม็ด ก่อนนอน จันทร์ ถึง พฤหัสบดี และ กิน _ เม็ด ศุกร์ ถึง อาทิตย์</option>
+                        <option value="war4">*war4*** กิน _ เม็ด ก่อนนอน จันทร์ ถึง เสาร์ และ กิน _ เม็ด ก่อนนอน อาทิตย์</option>
+                        <option value="war5">*war5*** กิน _ เม็ด ก่อนนอน จันทร์ พุธ ศุกร์ และ กิน _ เม็ด ก่อนนอน วันที่เหลือ</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- CONTROL BUTTONS & CALCULATION RESULT TABLE -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
@@ -251,7 +276,6 @@
                     <h3 class="text-lg font-bold text-slate-800">เป้าหมาย INR และคำแนะนำการปรับยา</h3>
                 </div>
 
-                <!-- ย้ายเป้าหมาย INR มาคอลัมน์นี้ -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 shadow-sm">
                     <div>
                         <label class="block text-xs font-bold text-indigo-900 mb-1.5">เป้าหมาย Target INR Range</label>
@@ -269,7 +293,6 @@
                     </div>
                 </div>
 
-                <!-- ADDED: กล่องคำสั่งแพทย์เพิ่มเติมกรณี INR สูง -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-rose-50/70 p-4 rounded-xl border border-rose-100 shadow-sm">
                     <div class="sm:col-span-2">
                         <span class="text-xs font-bold text-rose-800 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> คำสั่งแพทย์เพิ่มเติม (กรณีปรับลด/หยุดยา/INR สูง)</span>
@@ -315,7 +338,6 @@
                     </div>
                 </div>
 
-                <!-- General Reminder Section -->
                 <div class="mt-auto pt-5 border-t border-slate-100 text-[11px] text-slate-400 space-y-2">
                     <div class="bg-rose-50 border border-rose-100 rounded-lg p-2.5 text-rose-600">
                         <p class="font-bold mb-1">🚨 กรณี Major Bleeding (Any INR):</p>
@@ -333,7 +355,7 @@
                     <h3 class="text-lg font-bold text-slate-800">บันทึกประวัติ (HIS Copier)</h3>
                 </div>
                 
-                <textarea id="his-note-area" readonly class="w-full flex-grow min-h-[180px] bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none leading-relaxed shadow-inner" placeholder="ระบบจะจัดรูปแบบรายงานประวัติสำหรับคัดลอกลงระบบเวชระเบียน (EHR/HIS) ทันที..."></textarea>
+                <textarea id="his-note-area" readonly class="w-full flex-grow min-h-[300px] bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none leading-relaxed shadow-inner" placeholder="ระบบจะจัดรูปแบบรายงานประวัติสำหรับคัดลอกลงระบบเวชระเบียน (EHR/HIS) ทันที..."></textarea>
                 
                 <div class="mt-4 flex gap-2">
                     <button onclick="copyToClipboard()" class="flex-grow bg-slate-800 hover:bg-slate-900 active:scale-[0.98] transition-all text-white text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm">
@@ -360,11 +382,11 @@
     <!-- FOOTER -->
     <footer class="bg-slate-100 border-t border-slate-200 py-6 mt-8">
         <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-400 space-y-2">
-            <p>© 2026 Warfarin Dose Adjuster App • ออกแบบเพื่อความรวดเร็วและปลอดภัยในการดูแลรักษาผู้ป่วยในหอผู้ป่วยและคลินิกผู้ป่วยนอก</p>
+            <p>© 2026 Warfarin Dose Adjuster App • ออกแบบเพื่อความรวดเร็วและปลอดภัยในการดูแลรักษาผู้ป่วย</p>
             <p class="flex justify-center items-center gap-2">
-                <span class="bg-slate-200 px-2 py-0.5 rounded text-slate-500 font-semibold">v2.1 Stable</span>
+                <span class="bg-slate-200 px-2 py-0.5 rounded text-slate-500 font-semibold">v3.0 Stable</span>
                 <span>•</span>
-                <span class="text-slate-500">Thai Guideline-Compliant Calculator</span>
+                <span class="text-slate-500">Includes Med Dispense & HosXP Auto-Detection</span>
             </p>
         </div>
     </footer>
@@ -401,17 +423,15 @@
         const calcRangeEl = document.getElementById('calc-range');
         const calcAverageDoseEl = document.getElementById('calc-average-dose');
 
+        // Dispense & HosXP Elements
+        const manualTotalTabsInput = document.getElementById('manual-total-tabs');
+        const hosxpPatternSelect = document.getElementById('hosxp-pattern');
+
         // Dynamic Event listeners on changes
         currentInrInput.addEventListener('input', () => {
             evaluateInrAndGuideline();
             updateHISNote();
         });
-        targetInrSelect.addEventListener('change', () => {
-            evaluateInrAndGuideline();
-            updateHISNote();
-        });
-        omitDaysInput.addEventListener('input', updateHISNote);
-        vitKDoseInput.addEventListener('input', updateHISNote);
 
         // Select Tablet UI Function
         function selectTablet(mg) {
@@ -478,6 +498,10 @@
             // Recalculate percentage adjustment and distribution
             calculateAdjustmentPercentage();
             evaluateInrAndGuideline();
+            
+            // NEW: Dispense & HosXP related updates
+            detectHosxpPattern();
+            calculateTotalTablets();
             updateHISNote();
         }
 
@@ -490,30 +514,73 @@
                 percentage = ((current - previous) / previous) * 100;
             }
 
-            // Update Text
             adjustmentPercentageEl.textContent = `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)} %`;
 
-            // Style Card depending on Increased, Decreased, or Same
             if (percentage > 0.01) {
-                // INCREASED: Blueish Green styling
                 pctCard.className = "bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex flex-col justify-between transition-colors";
                 pctCard.querySelector('span').className = "text-xs font-semibold text-emerald-600 block mb-1";
                 pctIconSpan.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4 inline mr-0.5"></i> เพิ่มขึ้น';
                 pctIconSpan.className = "text-xs font-extrabold text-emerald-600 uppercase flex items-center";
             } else if (percentage < -0.01) {
-                // DECREASED: Pink/Rose alert styling as shown in image_0ee583.png
                 pctCard.className = "bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 flex flex-col justify-between transition-colors";
                 pctCard.querySelector('span').className = "text-xs font-semibold text-rose-600 block mb-1";
                 pctIconSpan.innerHTML = '<i data-lucide="trending-down" class="w-4 h-4 inline mr-0.5"></i> ลดลง';
                 pctIconSpan.className = "text-xs font-extrabold text-rose-600 uppercase flex items-center";
             } else {
-                // CONSTANT
                 pctCard.className = "bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-4 flex flex-col justify-between transition-colors";
                 pctCard.querySelector('span').className = "text-xs font-semibold text-slate-500 block mb-1";
                 pctIconSpan.innerHTML = '<i data-lucide="equal" class="w-4 h-4 inline mr-0.5"></i> คงเดิม';
                 pctIconSpan.className = "text-xs font-extrabold text-slate-500 uppercase flex items-center";
             }
             lucide.createIcons();
+        }
+
+        // --- NEW FUNCTIONS FOR PART 3 ---
+
+        function getDailyTabsArray() {
+            return {
+                0: parseFloat(doseInputs['sun'].value) || 0,
+                1: parseFloat(doseInputs['mon'].value) || 0,
+                2: parseFloat(doseInputs['tue'].value) || 0,
+                3: parseFloat(doseInputs['wed'].value) || 0,
+                4: parseFloat(doseInputs['thu'].value) || 0,
+                5: parseFloat(doseInputs['fri'].value) || 0,
+                6: parseFloat(doseInputs['sat'].value) || 0
+            };
+        }
+
+        function detectHosxpPattern() {
+            const d = getDailyTabsArray();
+            let matchedCode = 'custom';
+
+            // Checking patterns based on image_916360.png rules
+            const allSame = (d[0] === d[1] && d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6]);
+            const monToFriSame = (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5]);
+            const satSunSame = (d[6] === d[0]);
+            const monToThuSame = (d[1] === d[2] && d[2] === d[3] && d[3] === d[4]);
+            const friToSunSame = (d[5] === d[6] && d[6] === d[0]);
+            const monToSatSame = (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6]);
+            const mwfSame = (d[1] === d[3] && d[3] === d[5]);
+            const theRestSame = (d[2] === d[4] && d[4] === d[6] && d[6] === d[0]);
+
+            if (allSame && d[0] > 0) {
+                matchedCode = 'war1';
+            } 
+            else if (monToFriSame && satSunSame && d[1] !== d[6]) {
+                matchedCode = 'war2';
+            } 
+            else if (monToThuSame && friToSunSame && d[1] !== d[5]) {
+                matchedCode = 'war3';
+            } 
+            else if (monToSatSame && d[1] !== d[0]) {
+                matchedCode = 'war4';
+            } 
+            else if (mwfSame && theRestSame && d[1] !== d[2]) {
+                matchedCode = 'war5';
+            }
+
+            // Only update if it's currently on a system pattern or just matched one to prevent overriding intentional custom choice
+            hosxpPatternSelect.value = matchedCode;
         }
 
         // Apply quick preset dose structures (Now based on Tablets instead of mg)
@@ -526,8 +593,6 @@
         }
 
         function applyAlternating(tabs1, tabs2) {
-            // Sun, Tue, Thu, Sat get tabs1
-            // Mon, Wed, Fri get tabs2
             doseInputs['sun'].value = tabs1;
             doseInputs['mon'].value = tabs2;
             doseInputs['tue'].value = tabs1;
@@ -547,25 +612,11 @@
             currentInrInput.value = '';
             omitDaysInput.value = '';
             vitKDoseInput.value = '';
+            manualTotalTabsInput.value = '';
             calculateWeeklyDose();
             showToast('ล้างข้อมูลเรียบร้อยแล้ว');
         }
 
-        // Load / Save States
-        function saveCurrentVisit() {
-            const state = {
-                target: targetInrSelect.value,
-                tablet: tabletStrengthInput.value,
-                weeklyPrevious: weeklyDosePreviousInput.value,
-                doses: {}
-            };
-            days.forEach(day => {
-                state.doses[day] = doseInputs[day].value;
-            });
-            localStorage.setItem('warfarin_last_visit', JSON.stringify(state));
-        }
-
-        // Calculate and prompt guideline advisors
         function evaluateInrAndGuideline() {
             const inrStr = currentInrInput.value.trim();
             if (inrStr === '') {
@@ -591,7 +642,6 @@
             let minDoseTarget = 0;
             let maxDoseTarget = 0;
 
-            // กฎร่วมสำหรับค่า INR สูงลิ่ว
             if (inr >= 9.0) {
                 statusColor = "bg-rose-100 border border-rose-300 text-rose-900";
                 statusIcon = "alert-triangle";
@@ -607,7 +657,6 @@
                 pctRangeText = "Omit 1-2 doses";
                 minDoseTarget = 0; maxDoseTarget = 0;
             } else {
-                // กฎแยกตาม Target
                 if (isTarget2030) {
                     if (inr < 1.5) {
                         statusColor = "bg-amber-50 border border-amber-200 text-amber-800";
@@ -646,7 +695,6 @@
                         minDoseTarget = previousDose * 0.90; maxDoseTarget = previousDose * 0.90;
                     }
                 } else {
-                    // Target 2.5 - 3.5
                     if (inr < 1.9) {
                         statusColor = "bg-amber-50 border border-amber-200 text-amber-800";
                         statusIcon = "trending-up";
@@ -686,11 +734,9 @@
                 }
             }
 
-            // Update guidelines visual elements
             inrStatusBadge.className = `p-3 rounded-xl flex items-center gap-2 text-sm font-semibold ${statusColor}`;
             inrStatusBadge.innerHTML = `<i data-lucide="${statusIcon}" class="w-5 h-5"></i> <span>${statusText}</span>`;
             
-            // ใช้ innerHTML เพื่อให้รองรับ \n เป็น <br> ในส่วนของข้อความยาวๆ
             guidelineRec.innerHTML = recommendation.replace(/\n/g, '<br>');
             
             if (previousDose > 0) {
@@ -703,7 +749,7 @@
                     calcAverageDoseEl.textContent = `${minDoseTarget.toFixed(1)} - ${maxDoseTarget.toFixed(1)} mg`;
                 }
             } else {
-                calcRangeEl.textContent = "ไม่ได้ระบุขนาดยาครั้งก่อน (ไม่สามารถประเมิน mg ได้)";
+                calcRangeEl.textContent = "ไม่ได้ระบุขนาดยาครั้งก่อน";
                 calcAverageDoseEl.textContent = "- mg";
             }
             
@@ -720,19 +766,15 @@
             const currentWeekly = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
             const pct = parseFloat(adjustmentPercentageEl.textContent) || 0;
             
-            // ดึงข้อความ Guideline ล่าสุด
             let guidelineText = guidelineRec.textContent.trim() || '_______________________';
 
-            // ดึงค่าการหยุดยาและ Vit K
             const omitDays = omitDaysInput.value.trim();
             const vitKDose = vitKDoseInput.value.trim();
 
-            // สร้าง Format ข้อความตามแบบฟอร์ม
             let report = `Rx note: ปรับยา warfarin ตาม INR\n`;
             report += `ค่า INR ล่าสุดวันนี้: ${currentINR}   เป้าหมาย Target INR Range: ${target}\n`;
             report += `แนวทางการปรับยาตามตารางมาตรฐาน: ${guidelineText}\n`;
             
-            // แทรกคำสั่งเพิ่มเติมถ้ามีการกรอก
             if (omitDays || vitKDose) {
                 let extraOrders = [];
                 if (omitDays) extraOrders.push(`Hold ยา ${omitDays} วัน`);
@@ -740,7 +782,6 @@
                 report += `คำสั่งแพทย์เพิ่มเติม: ${extraOrders.join(' และ ')}\n`;
             }
 
-            // จัดรูปแบบตัวเลข mg ทศนิยมสูงสุด 1 ตำแหน่ง (ถ้าเป็น .0 ให้ซ่อน)
             const fmtPrev = parseFloat(prevWeekly.toFixed(1));
             const fmtCurr = parseFloat(currentWeekly.toFixed(1));
 
@@ -749,50 +790,59 @@
             const pctText = pct === 0 ? 'คงเดิม 0%' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
             report += `ขนาดยา warfarin แนะนำ : ${fmtCurr} mg/week (${pctText})\n\n`;
             
-            report += `การกินยา\n`;
+            report += `[ สั่งยา / วิธีการกินยา ]\n`;
             report += `warfarin ${tabletMg} mg\n`;
 
-            // ระบบ AI วิเคราะห์รูปแบบการกินยาให้อัตโนมัติจากปฏิทิน (แยก Pattern ตามเงื่อนไข)
-            const dSun = parseFloat(doseInputs['sun'].value) || 0;
-            const dMon = parseFloat(doseInputs['mon'].value) || 0;
-            const dTue = parseFloat(doseInputs['tue'].value) || 0;
-            const dWed = parseFloat(doseInputs['wed'].value) || 0;
-            const dThu = parseFloat(doseInputs['thu'].value) || 0;
-            const dFri = parseFloat(doseInputs['fri'].value) || 0;
-            const dSat = parseFloat(doseInputs['sat'].value) || 0;
-
+            const d = getDailyTabsArray();
+            const patternCode = hosxpPatternSelect.value;
+            const manualTabs = manualTotalTabsInput.value.trim();
             let dosingText = "";
-            
-            // Pattern 1: กินเท่ากันทุกวัน
-            if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dFri === dSat && dSat === dSun) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด ทุกวัน`;
-            } 
-            // Pattern 5: กินจันทร์-ศุกร์ (งดยา เสาร์-อาทิตย์)
-            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dSat === 0 && dSun === 0) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง ศุกร์ (งดยาวันเสาร์ - อาทิตย์)`;
-            } 
-            // Pattern 2: กินจันทร์-ศุกร์แบบหนึ่ง และ เสาร์-อาทิตย์แบบหนึ่ง
-            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dSat === dSun) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง ศุกร์ และ กินครั้งละ ${dSat} เม็ด วันเสาร์ - อาทิตย์`;
-            } 
-            // Pattern 3: กินจันทร์-พฤหัสแบบหนึ่ง และ ศุกร์-อาทิตย์แบบหนึ่ง
-            else if (dMon === dTue && dTue === dWed && dWed === dThu && dFri === dSat && dSat === dSun) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง พฤหัสบดี และ กินครั้งละ ${dFri} เม็ด วันศุกร์ - อาทิตย์`;
-            } 
-            // Pattern 4: กินจันทร์,พุธ,ศุกร์แบบหนึ่ง และ วันที่เหลือแบบหนึ่ง
-            else if (dMon === dWed && dWed === dFri && dTue === dThu && dThu === dSat && dSat === dSun) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์, พุธ, ศุกร์ และ กินครั้งละ ${dTue} เม็ด วันที่เหลือ`;
-            } 
-            // Pattern 6: กินจันทร์ ถึง เสาร์ แบบหนึ่ง และ วันอาทิตย์ อีกแบบหนึ่ง
-            else if (dMon === dTue && dTue === dWed && dWed === dThu && dThu === dFri && dFri === dSat && dSat !== dSun) {
-                dosingText = `กินครั้งละ ${dMon} เม็ด วันจันทร์ ถึง เสาร์ และ ${dSun} เม็ด วันอาทิตย์`;
-            }
-            // Fallback Pattern: แต่ละวันไม่เหมือนกันเลย (Freeform)
-            else {
-                dosingText = `กิน จ:${dMon} อ:${dTue} พ:${dWed} พฤ:${dThu} ศ:${dFri} ส:${dSat} อา:${dSun} (เม็ด)`;
+            let shortcutKey = "";
+
+            if (patternCode === 'war1') {
+                dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน`;
+                shortcutKey = '*war1***';
+            } else if (patternCode === 'war2') {
+                dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน จันทร์ ถึง ศุกร์\nและ กิน ${d[6] > 0 ? d[6] : '_'} เม็ด เสาร์ และ อาทิตย์`;
+                shortcutKey = '*war2***';
+            } else if (patternCode === 'war3') {
+                dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน จันทร์ ถึง พฤหัสบดี\nและ กิน ${d[5] > 0 ? d[5] : '_'} เม็ด ศุกร์ ถึง อาทิตย์`;
+                shortcutKey = '*war3***';
+            } else if (patternCode === 'war4') {
+                dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน จันทร์ ถึง เสาร์\nและ กิน ${d[0] > 0 ? d[0] : '_'} เม็ด ก่อนนอน อาทิตย์`;
+                shortcutKey = '*war4***';
+            } else if (patternCode === 'war5') {
+                dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน จันทร์ พุธ ศุกร์\nและ กิน ${d[2] > 0 ? d[2] : '_'} เม็ด ก่อนนอน วันที่เหลือ`;
+                shortcutKey = '*war5***';
+            } else {
+                // Fallback Pattern: AI generated
+                if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6] && d[6] === d[0]) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด ทุกวัน`;
+                } else if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[6] === 0 && d[0] === 0) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด วันจันทร์ ถึง ศุกร์ (งดยาวันเสาร์ - อาทิตย์)`;
+                } else if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[6] === d[0]) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด วันจันทร์ ถึง ศุกร์\nและ กินครั้งละ ${d[6]} เม็ด วันเสาร์ - อาทิตย์`;
+                } else if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[5] === d[6] && d[6] === d[0]) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด วันจันทร์ ถึง พฤหัสบดี\nและ กินครั้งละ ${d[5]} เม็ด วันศุกร์ - อาทิตย์`;
+                } else if (d[1] === d[3] && d[3] === d[5] && d[2] === d[4] && d[4] === d[6] && d[6] === d[0]) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด วันจันทร์, พุธ, ศุกร์\nและ กินครั้งละ ${d[2]} เม็ด วันที่เหลือ`;
+                } else if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6] && d[6] !== d[0]) {
+                    dosingText = `กินครั้งละ ${d[1]} เม็ด วันจันทร์ ถึง เสาร์\nและ กิน ${d[0]} เม็ด วันอาทิตย์`;
+                } else {
+                    dosingText = `กิน จ:${d[1]} อ:${d[2]} พ:${d[3]} พฤ:${d[4]} ศ:${d[5]} ส:${d[6]} อา:${d[0]} (เม็ด)`;
+                }
             }
 
-            report += `${dosingText} (${fmtCurr} mg/week)\n`;
+            report += `${dosingText}\n`;
+            report += `ขนาดยา ${fmtCurr} mg/week\n`;
+            
+            if (manualTabs) {
+                report += `จำนวนเม็ดยาถึงนัด    ${manualTabs}    เม็ด\n`;
+            }
+
+            if (shortcutKey) {
+                report += `key ลัด วิธีการใช้ยา ${shortcutKey}\n`;
+            }
 
             report += `\nเรียนแพทย์พิจารณา`;
 
@@ -800,39 +850,23 @@
         }
 
         // Save 2: บันทึก Weekly Dose ครั้งนี้
-        function saveCurrentDoseOnly() {
-            saveCurrentVisit();
-            showToast('บันทึกข้อมูล "Weekly Dose ครั้งนี้" เรียบร้อยแล้ว');
-        }
-
-        // Save 1: Save current to previous dose
         function saveToPreviousDose() {
             const currentDose = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
             if (currentDose === 0) {
                 showToast('กรุณาระบุจำนวนยาก่อนบันทึก', false);
                 return;
             }
-            // ย้ายค่า Weekly Dose ปัจจุบัน ไปใส่ในช่อง Weekly Dose ครั้งก่อน
             weeklyDosePreviousInput.value = currentDose;
-            
-            // สั่งคำนวณใหม่ ซึ่งจะทำให้ % ที่ปรับกลายเป็น 0% ทันที
             calculateWeeklyDose();
-            
-            // บันทึกลง Local Storage เผื่อเปิดใหม่
-            saveCurrentVisit();
-            
             showToast('บันทึกเป็นขนาดยาครั้งก่อน (Previous Dose) เรียบร้อยแล้ว');
         }
 
-        // Utility: Copy to Clipboard
         function copyToClipboard() {
             const textToCopy = hisNoteArea.value;
             if (!textToCopy) {
                 showToast('ไม่มีข้อมูลสำหรับคัดลอก', false);
                 return;
             }
-
-            // Fallback copy utility for iframe-based systems
             const dummy = document.createElement("textarea");
             document.body.appendChild(dummy);
             dummy.value = textToCopy;
@@ -843,7 +877,6 @@
             showToast('คัดลอกรายงานลงคลิปบอร์ดแล้ว!');
         }
 
-        // Utility: Print or share report
         function shareText() {
             const textToPrint = hisNoteArea.value;
             if (!textToPrint) {
@@ -872,7 +905,6 @@
             printWindow.document.close();
         }
 
-        // Utility: Toast alert notification popup
         function showToast(message, isSuccess = true) {
             const toast = document.getElementById('toast-box');
             const toastMsg = document.getElementById('toast-message');
@@ -889,11 +921,9 @@
             }
             lucide.createIcons();
 
-            // Slide in
             toast.classList.remove('translate-y-20', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
 
-            // Slide out after 3.5s
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0');
                 toast.classList.remove('translate-y-0', 'opacity-100');
