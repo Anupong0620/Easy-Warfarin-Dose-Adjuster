@@ -433,6 +433,14 @@
             updateHISNote();
         });
 
+        targetInrSelect.addEventListener('change', () => {
+            evaluateInrAndGuideline();
+            updateHISNote();
+        });
+
+        omitDaysInput.addEventListener('input', updateHISNote);
+        vitKDoseInput.addEventListener('input', updateHISNote);
+
         // Select Tablet UI Function
         function selectTablet(mg) {
             tabletStrengthInput.value = mg;
@@ -455,19 +463,15 @@
             calculateWeeklyDose(); // Trigger full recalc since strength changed
         }
 
-        // ฟังก์ชันสำหรับกดปุ่มบวก/ลบ จำนวนเม็ดยา (ทีละ 0.25)
+        // ฟังก์ชันสำหรับกดปุ่มบวก/ลบ จำนวนเม็ดยา
         function stepDose(day, stepValue) {
             const input = doseInputs[day];
             let currentVal = parseFloat(input.value) || 0;
             let newVal = currentVal + stepValue;
             
-            // ป้องกันไม่ให้ค่าติดลบ
             if (newVal < 0) newVal = 0;
             
-            // ใส่ค่ากลับไปที่ช่อง (ถ้าเป็น 0 ให้เคลียร์ว่างๆ ไว้จะได้ดูสะอาดตา)
             input.value = newVal > 0 ? newVal : '';
-            
-            // สั่งคำนวณใหม่
             calculateWeeklyDose();
         }
 
@@ -499,9 +503,8 @@
             calculateAdjustmentPercentage();
             evaluateInrAndGuideline();
             
-            // NEW: Dispense & HosXP related updates
+            // Dispense & HosXP related updates
             detectHosxpPattern();
-            calculateTotalTablets();
             updateHISNote();
         }
 
@@ -535,8 +538,6 @@
             lucide.createIcons();
         }
 
-        // --- NEW FUNCTIONS FOR PART 3 ---
-
         function getDailyTabsArray() {
             return {
                 0: parseFloat(doseInputs['sun'].value) || 0,
@@ -553,7 +554,6 @@
             const d = getDailyTabsArray();
             let matchedCode = 'custom';
 
-            // Checking patterns based on image_916360.png rules
             const allSame = (d[0] === d[1] && d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6]);
             const monToFriSame = (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5]);
             const satSunSame = (d[6] === d[0]);
@@ -579,11 +579,10 @@
                 matchedCode = 'war5';
             }
 
-            // Only update if it's currently on a system pattern or just matched one to prevent overriding intentional custom choice
             hosxpPatternSelect.value = matchedCode;
         }
 
-        // Apply quick preset dose structures (Now based on Tablets instead of mg)
+        // Apply quick preset dose structures
         function applyPreset(tabs) {
             days.forEach(day => {
                 doseInputs[day].value = tabs;
@@ -774,13 +773,6 @@
             let report = `Rx note: ปรับยา warfarin ตาม INR\n`;
             report += `ค่า INR ล่าสุดวันนี้: ${currentINR}   เป้าหมาย Target INR Range: ${target}\n`;
             report += `แนวทางการปรับยาตามตารางมาตรฐาน: ${guidelineText}\n`;
-            
-            if (omitDays || vitKDose) {
-                let extraOrders = [];
-                if (omitDays) extraOrders.push(`Hold ยา ${omitDays} วัน`);
-                if (vitKDose) extraOrders.push(`ให้ Vitamin K ${vitKDose} mg`);
-                report += `คำสั่งแพทย์เพิ่มเติม: ${extraOrders.join(' และ ')}\n`;
-            }
 
             const fmtPrev = parseFloat(prevWeekly.toFixed(1));
             const fmtCurr = parseFloat(currentWeekly.toFixed(1));
@@ -815,7 +807,7 @@
                 dosingText = `กิน ${d[1] > 0 ? d[1] : '_'} เม็ด ก่อนนอน จันทร์ พุธ ศุกร์\nและ กิน ${d[2] > 0 ? d[2] : '_'} เม็ด ก่อนนอน วันที่เหลือ`;
                 shortcutKey = '*war5***';
             } else {
-                // Fallback Pattern: AI generated
+                // Fallback Pattern
                 if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[5] === d[6] && d[6] === d[0]) {
                     dosingText = `กินครั้งละ ${d[1]} เม็ด ทุกวัน`;
                 } else if (d[1] === d[2] && d[2] === d[3] && d[3] === d[4] && d[4] === d[5] && d[6] === 0 && d[0] === 0) {
@@ -835,6 +827,14 @@
 
             report += `${dosingText}\n`;
             report += `ขนาดยา ${fmtCurr} mg/week\n`;
+
+            // ย้ายคำสั่งแพทย์เพิ่มเติมมาไว้ตรงนี้ (หลังขนาดยาต่อสัปดาห์)
+            if (omitDays || vitKDose) {
+                let extraOrders = [];
+                if (omitDays) extraOrders.push(`Hold ยา ${omitDays} วัน`);
+                if (vitKDose) extraOrders.push(`ให้ Vitamin K ${vitKDose} mg`);
+                report += `คำสั่งแพทย์เพิ่มเติม:  ${extraOrders.join(' และ ')}\n`;
+            }
             
             if (manualTabs) {
                 report += `จำนวนเม็ดยาถึงนัด    ${manualTabs}    เม็ด\n`;
@@ -849,7 +849,7 @@
             hisNoteArea.value = report;
         }
 
-        // Save 2: บันทึก Weekly Dose ครั้งนี้
+        // Save 1: บันทึกเป็น Weekly Dose ครั้งก่อน
         function saveToPreviousDose() {
             const currentDose = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
             if (currentDose === 0) {
@@ -859,6 +859,17 @@
             weeklyDosePreviousInput.value = currentDose;
             calculateWeeklyDose();
             showToast('บันทึกเป็นขนาดยาครั้งก่อน (Previous Dose) เรียบร้อยแล้ว');
+        }
+
+        // Save 2: ยืนยัน Weekly Dose ครั้งนี้
+        function saveCurrentDoseOnly() {
+            const currentDose = parseFloat(weeklyDoseCurrentEl.textContent) || 0;
+            if (currentDose === 0) {
+                showToast('กรุณาระบุจำนวนยาก่อนบันทึก', false);
+                return;
+            }
+            updateHISNote();
+            showToast('บันทึก Weekly Dose ครั้งนี้เรียบร้อยแล้ว');
         }
 
         function copyToClipboard() {
@@ -932,7 +943,6 @@
 
         // Window startup initialize
         window.onload = function() {
-            // Initiate standard daily calculation values
             calculateWeeklyDose();
         }
     </script>
